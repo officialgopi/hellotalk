@@ -19,6 +19,13 @@ import { corsOptions } from "./constants/cors.constant";
 
 app.use(cors(corsOptions));
 
+app.get('/api/v1/health',(req,res)=>{
+  res.json({
+    status:"ok",
+    message:"The Server is healthy"
+  })
+})
+
 //Apis
 import userRouter from "./routes/user.route";
 import chatRouter from "./routes/chat.route";
