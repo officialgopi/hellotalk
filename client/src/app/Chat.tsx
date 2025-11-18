@@ -141,6 +141,7 @@ const Chat = ({
 
   const newMessagesListener = useCallback(
     (data: any) => {
+      console.log(data);
       if (data.chatId !== chatId) return;
       setMessages((prev) => [...prev, data.message]);
     },

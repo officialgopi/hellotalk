@@ -19,7 +19,6 @@ const onlineUsers = new Set();
 const socketOnConection = (io: Server) => (socket: Socket) => {
   const user = socket.user!;
   userSocketIDs.set(user!._id.toString(), socket.id);
-
   socket.on(NEW_MESSAGE, async ({ chatId, members, message }) => {
     const messageForRealTime = {
       content: message,
@@ -37,7 +36,9 @@ const socketOnConection = (io: Server) => (socket: Socket) => {
       chat: chatId,
     };
 
-    const membersSocket = getSockets(members);
+    const membersSocket = getSockets(
+      members?.map((member: any) => member._id.toString()),
+    );
     io.to(membersSocket).emit(NEW_MESSAGE, {
       chatId,
       message: messageForRealTime,
@@ -52,26 +53,30 @@ const socketOnConection = (io: Server) => (socket: Socket) => {
   });
 
   socket.on(START_TYPING, ({ members, chatId }) => {
-    const membersSockets = getSockets(members);
+    const membersSockets = getSockets(
+      members?.map((member: any) => member._id),
+    );
     socket.to(membersSockets).emit(START_TYPING, { chatId });
   });
 
   socket.on(STOP_TYPING, ({ members, chatId }) => {
-    const membersSockets = getSockets(members);
+    const membersSockets = getSockets(
+      members?.map((member: any) => member._id),
+    );
     socket.to(membersSockets).emit(STOP_TYPING, { chatId });
   });
 
   socket.on(CHAT_JOINED, ({ userId, members }) => {
     onlineUsers.add(userId.toString());
 
-    const membersSocket = getSockets(members);
+    const membersSocket = getSockets(members?.map((member: any) => member._id));
     io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 
   socket.on(CHAT_LEAVED, ({ userId, members }) => {
     onlineUsers.delete(userId.toString());
 
-    const membersSocket = getSockets(members);
+    const membersSocket = getSockets(members?.map((member: any) => member._id));
     io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 
