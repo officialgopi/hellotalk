@@ -1,8 +1,16 @@
 import { getSocket } from "@/lib/Socket";
-import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Phone,
+  PhoneOff,
+  ShieldCheck,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 type AnswerPayload = {
   answer: RTCSessionDescriptionInit;
@@ -27,6 +35,22 @@ type CallProps = {
   onClose?: () => void;
 };
 
+const confirmDialogVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95, y: 8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.96,
+    y: 4,
+    transition: { duration: 0.15, ease: "easeInOut" },
+  },
+};
+
 const Call = ({
   calleeId,
   callerId: incomingCallerId,
@@ -41,10 +65,13 @@ const Call = ({
   const [callActive, setCallActive] = useState<boolean>(false);
   const [callIncoming, setCallIncoming] = useState<boolean>(!isOutgoing);
   const [callerId, setCallerId] = useState<string | null>(
-    incomingCallerId || null
+    incomingCallerId || null,
   );
   const [isCalling, setIsCalling] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+
+  // --- NEW HANDUP SAFETY CORES ---
+  const [showHangupConfirm, setShowHangupConfirm] = useState<boolean>(false);
 
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -53,55 +80,50 @@ const Call = ({
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const remoteCombinedStreamRef = useRef<MediaStream | null>(null);
 
-  // ICE servers for STUN/TURN
   const iceServers: RTCConfiguration = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      // Add TURN servers here if needed
-    ],
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   };
 
-  // Get user media on mount with constraints based on mode
   useEffect(() => {
     const getMedia = async () => {
       try {
         const constraints: MediaStreamConstraints = {
-          // Request audio always. Request video only in video mode.
           audio: { echoCancellation: true, noiseSuppression: true },
-          video: mode === "video" ? { width: 1280, height: 720 } : false,
-        } as MediaStreamConstraints;
+          video:
+            mode === "video"
+              ? {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                  facingMode: "user",
+                }
+              : false,
+        };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setMyStream(stream);
         if (myVideoRef.current) {
           myVideoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error("Failed to get media", err);
+        console.error("Failed to acquire network media streams:", err);
       }
     };
     getMedia();
   }, [mode]);
 
-  // Connect to socket and set up listeners
   useEffect(() => {
     socketRef.current = socket;
 
-    // We do NOT listen to receive:offer here. Chat opens the modal and passes
-    // the initialOffer into this component for a single, controlled handling.
-
-    // Listen for incoming answer
     socketRef.current.on(
       "receive:answer",
       async ({ answer }: AnswerPayload) => {
         if (peerConnectionRef.current) {
           await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(answer)
+            new RTCSessionDescription(answer),
           );
         }
-      }
+      },
     );
 
-    // Listen for ICE candidates
     socketRef.current.on(
       "receive-ice-candidate",
       async ({ candidate }: IceCandidatePayload) => {
@@ -110,33 +132,25 @@ const Call = ({
             await peerConnectionRef.current.addIceCandidate(candidate);
           }
         } catch (err) {
-          console.error("Error adding received ice candidate", err);
+          console.error("Error linking streaming ICE candidate nodes:", err);
         }
-      }
+      },
     );
 
-    // Listen for hangup
     socketRef.current.on("call:hangup", () => {
-      endCall();
+      executeEndCall(); // Direct termination if remote hangs up
     });
 
     return () => {
-      // remove listeners, do not disconnect the global socket
       socketRef.current?.off("receive:answer");
       socketRef.current?.off("receive-ice-candidate");
       socketRef.current?.off("call:hangup");
     };
-    // eslint-disable-next-line
   }, [myStream]);
 
-  // Helper to create peer connection
   const createPeerConnection = (otherUserId: string) => {
     const pc = new RTCPeerConnection(iceServers);
 
-    // We rely on addTrack for local sending, and ontrack for receiving.
-    // Avoid adding extra transceivers which can cause asymmetric directions.
-
-    // Send ICE candidates to peer
     pc.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
       if (event.candidate) {
         socketRef.current?.emit("send-ice-candidate", {
@@ -146,9 +160,7 @@ const Call = ({
       }
     };
 
-    // When remote stream arrives
     pc.ontrack = (event: RTCTrackEvent) => {
-      // Some browsers provide event.streams, others only event.track
       if (!remoteCombinedStreamRef.current) {
         remoteCombinedStreamRef.current = new MediaStream();
       }
@@ -157,17 +169,17 @@ const Call = ({
       const alreadyHas = combined
         .getTracks()
         .some((t) => t.id === incomingTrack.id);
+
       if (!alreadyHas) combined.addTrack(incomingTrack);
 
       setRemoteStream(combined);
 
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = combined;
-        (remoteVideoRef.current as HTMLVideoElement).play?.().catch(() => {});
+        remoteVideoRef.current.play?.().catch(() => {});
       }
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = combined;
-        // Ensure not muted and volume is up
         remoteAudioRef.current.muted = false;
         remoteAudioRef.current.volume = 1;
         remoteAudioRef.current.play?.().catch(() => {});
@@ -177,10 +189,8 @@ const Call = ({
     return pc;
   };
 
-  // Initiate a call
   const startCall = async () => {
     if (!calleeId || !myStream) return;
-    // If an old peerConnection exists, close it before starting
     if (peerConnectionRef.current) {
       try {
         peerConnectionRef.current.onicecandidate = null;
@@ -192,7 +202,6 @@ const Call = ({
     setIsCalling(true);
     peerConnectionRef.current = createPeerConnection(calleeId);
 
-    // Add local stream tracks with explicit kind handling to ensure both sides send audio
     const pc = peerConnectionRef.current!;
     myStream.getAudioTracks().forEach((track) => pc.addTrack(track, myStream));
     if (mode === "video") {
@@ -201,14 +210,12 @@ const Call = ({
         .forEach((track) => pc.addTrack(track, myStream));
     }
 
-    // Create offer
     const offer = await peerConnectionRef.current.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: mode === "video",
     } as any);
     await peerConnectionRef.current.setLocalDescription(offer);
 
-    // Send offer to callee with mode so receiver can set UI
     socketRef.current?.emit("send:offer", {
       to: calleeId,
       offer,
@@ -219,14 +226,12 @@ const Call = ({
     setCallActive(true);
   };
 
-  // Accept incoming call
   const acceptCall = async () => {
     if (!callerId || !peerConnectionRef.current || !myStream) return;
     setIsMuted(false);
     setCallActive(true);
     setCallIncoming(false);
 
-    // Add local stream tracks with explicit kind handling
     const pc = peerConnectionRef.current!;
     myStream.getAudioTracks().forEach((track) => pc.addTrack(track, myStream));
     if (mode === "video") {
@@ -235,21 +240,18 @@ const Call = ({
         .forEach((track) => pc.addTrack(track, myStream));
     }
 
-    // Create answer
     const answer = await peerConnectionRef.current.createAnswer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: mode === "video",
     } as any);
     await peerConnectionRef.current.setLocalDescription(answer);
 
-    // Send answer to caller
     socketRef.current?.emit("send:answer", {
       to: callerId,
       answer,
     });
   };
 
-  // Reject incoming call
   const rejectCall = () => {
     setCallIncoming(false);
     setCallerId(null);
@@ -264,20 +266,24 @@ const Call = ({
         } catch {}
       });
     }
-    // Notify caller that the call was rejected
     const target = callerId || calleeId;
     if (target) socketRef.current?.emit("call:reject", { to: target });
     onClose?.();
   };
 
-  // Hang up call
-  const endCall = () => {
+  // Intercept hangup to prompt popup confirmation
+  const handleInitiateHangup = () => {
+    setShowHangupConfirm(true);
+  };
+
+  // Final confirmation execution pipeline
+  const executeEndCall = () => {
+    setShowHangupConfirm(false);
     setCallActive(false);
     setIsCalling(false);
     setCallIncoming(false);
     setCallerId(null);
     setRemoteStream(null);
-    // Stop local tracks to release mic/camera properly
     if (myStream) {
       myStream.getTracks().forEach((t) => {
         try {
@@ -289,41 +295,32 @@ const Call = ({
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = null;
-    }
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+
     socketRef.current?.emit("call:hangup", {
       to: calleeId || callerId,
     } as HangupPayload);
     onClose?.();
   };
 
-  // Auto-start outgoing call when stream ready
   const shouldAutoStart = useMemo(
     () => isOutgoing && !!calleeId && !!myStream,
-    [isOutgoing, calleeId, myStream]
+    [isOutgoing, calleeId, myStream],
   );
   useEffect(() => {
-    if (shouldAutoStart) {
-      startCall();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (shouldAutoStart) startCall();
   }, [shouldAutoStart]);
 
-  // If initial offer is provided (opened due to incoming call), set it
   useEffect(() => {
     const setupFromInitialOffer = async () => {
       if (!initialOffer) return;
-      // incoming offer
       setCallIncoming(true);
       setCallerId(incomingCallerId || null);
       if (!incomingCallerId) return;
       peerConnectionRef.current = createPeerConnection(incomingCallerId);
       await peerConnectionRef.current.setRemoteDescription(
-        new RTCSessionDescription(initialOffer)
+        new RTCSessionDescription(initialOffer),
       );
       if (myStream) {
         myStream.getTracks().forEach((track) => {
@@ -332,10 +329,8 @@ const Call = ({
       }
     };
     setupFromInitialOffer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialOffer]);
 
-  // Keep remote audio element in sync with remote stream
   useEffect(() => {
     if (remoteAudioRef.current && remoteStream) {
       remoteAudioRef.current.srcObject = remoteStream;
@@ -350,7 +345,6 @@ const Call = ({
     setIsMuted(newMuted);
   };
 
-  // Attach streams to video elements
   useEffect(() => {
     if (myVideoRef.current && myStream) {
       myVideoRef.current.srcObject = myStream;
@@ -361,23 +355,13 @@ const Call = ({
     if (remoteStream) {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
-        (remoteVideoRef.current as HTMLVideoElement).play?.().catch(() => {});
-      }
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.volume = 1;
-        remoteAudioRef.current.play?.().catch(() => {});
+        remoteVideoRef.current.play?.().catch(() => {});
       }
     }
   }, [remoteStream]);
 
-  // Handle remote rejection
   useEffect(() => {
-    const onRejected = () => {
-      // Close UI and cleanup if remote rejected
-      endCall();
-    };
+    const onRejected = () => executeEndCall();
     socketRef.current?.on("call:rejected", onRejected);
     return () => {
       socketRef.current?.off("call:rejected", onRejected);
@@ -385,106 +369,216 @@ const Call = ({
   }, []);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-neutral-900 text-white flex flex-col justify-between">
-      {/* VIDEO GRID */}
-      {mode === "video" && (
-        <div className="flex flex-1 items-center justify-center gap-4 p-4 sm:p-6 flex-col sm:flex-row">
-          {/* Local video */}
-          <video
-            ref={myVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="bg-black rounded-xl shadow-lg object-cover w-full sm:w-1/2 h-72 sm:h-[400px]"
-          />
-
-          {/* Remote / Callee video */}
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className="bg-black rounded-xl shadow-lg object-cover w-full sm:w-1/2 h-72 sm:h-[400px] border-4 border-green-500"
-          />
+    <div className="fixed inset-0 w-screen h-screen bg-[#0a0a0c] text-[#f5f5f7] flex flex-col justify-between z-[100] select-none font-sans overflow-hidden">
+      {/* --- CINEMATIC HEADER HUD PANEL --- */}
+      <div className="w-full px-6 py-4 bg-gradient-to-b from-black/60 to-transparent flex items-center justify-between relative z-30 shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.04] backdrop-blur-md shadow-xs">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="text-[10px] font-bold tracking-wider font-mono uppercase text-neutral-400">
+            End-To-End Encrypted Session
+          </span>
         </div>
-      )}
-
-      {/* AUDIO PLACEHOLDER */}
-      {mode === "audio" && (
-        <div className="flex flex-1 flex-col items-center justify-center p-4">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-neutral-800 flex items-center justify-center shadow-inner">
-            <Mic className="text-neutral-400 w-8 h-8 sm:w-10 sm:h-10" />
-          </div>
-          <p className="text-sm sm:text-lg text-neutral-400 italic mt-4">
-            Audio call in progress...
-          </p>
-          {/* Hidden element for remote audio playback */}
-          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        <div className="text-right">
+          <span className="text-[10px] font-bold tracking-tight font-mono text-neutral-500 uppercase">
+            MODE // {mode}_LINK
+          </span>
         </div>
-      )}
-
-      {/* CONTROLS */}
-      <div className="w-full flex justify-center gap-4 sm:gap-6 p-4 sm:p-6 bg-neutral-950/70 border-t border-neutral-800">
-        <AnimatePresence>
-          {callIncoming && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex items-center gap-4 sm:gap-6"
-            >
-              <span className="hidden sm:block text-neutral-300 font-medium tracking-wide">
-                Incoming call...
-              </span>
-              <button
-                onClick={acceptCall}
-                className="bg-green-600 hover:bg-green-700 transition-all text-white p-4 sm:p-5 rounded-full shadow-lg"
-              >
-                <Phone size={20} className="sm:!w-6 sm:!h-6" />
-              </button>
-              <button
-                onClick={rejectCall}
-                className="bg-red-600 hover:bg-red-700 transition-all text-white p-4 sm:p-5 rounded-full shadow-lg"
-              >
-                <PhoneOff size={20} className="sm:!w-6 sm:!h-6" />
-              </button>
-            </motion.div>
-          )}
-
-          {callActive && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex gap-4 sm:gap-6"
-            >
-              <button
-                onClick={toggleMute}
-                className="bg-neutral-700 hover:bg-neutral-600 transition-all text-white p-4 sm:p-5 rounded-full shadow-lg"
-              >
-                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
-              </button>
-              <button
-                onClick={endCall}
-                className="bg-red-600 hover:bg-red-700 transition-all text-white p-4 sm:p-5 rounded-full shadow-lg"
-              >
-                <PhoneOff size={20} />
-              </button>
-            </motion.div>
-          )}
-
-          {!callActive && !callIncoming && isOutgoing && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-2 text-sm sm:text-lg text-neutral-400 italic"
-            >
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              {isCalling ? "Calling..." : "Starting call..."}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* --- CORE MEDIA STREAM INTERFACE CANVASES --- */}
+      <div className="flex-grow w-full relative z-10 flex items-center justify-center p-4 min-h-0">
+        {mode === "video" && (
+          <div className="w-full h-full max-w-5xl rounded-2xl overflow-hidden bg-neutral-950 border border-white/[0.03] relative shadow-2xl flex items-center justify-center">
+            <div className="w-full h-full relative">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover rounded-2xl bg-[#0e0e11]"
+              />
+              {!remoteStream && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950/90 gap-3">
+                  <Loader2 className="w-5 h-5 text-neutral-500 animate-spin" />
+                  <span className="text-xs font-medium font-mono text-neutral-400 tracking-wide uppercase">
+                    Awaiting incoming video stream...
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="absolute top-4 right-4 w-32 sm:w-44 aspect-video rounded-xl overflow-hidden border border-white/[0.08] shadow-xl z-20 bg-black/40 backdrop-blur-md">
+              <video
+                ref={myVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover scale-x-[-1]"
+              />
+            </div>
+          </div>
+        )}
+
+        {mode === "audio" && (
+          <div className="flex flex-col items-center justify-center text-center max-w-sm px-6">
+            <div className="relative mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/[0.02] border border-white/[0.05] animate-ping opacity-25" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/[0.02] border border-white/[0.03] flex items-center justify-center shadow-inner relative z-10">
+                <Mic className="text-neutral-300 w-7 h-7 sm:w-8 sm:h-8 stroke-[1.5]" />
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold tracking-tight text-white font-sans">
+              {callActive
+                ? "Active Audio Broadcast Channel"
+                : "Initializing Link Pipelines"}
+            </h3>
+            <p className="mt-1 text-[11px] font-medium font-mono tracking-wide text-neutral-500 uppercase">
+              {callIncoming
+                ? "Incoming encrypted request"
+                : isCalling
+                  ? "Pinging remote transceiver node"
+                  : "Securing tunnel routes..."}
+            </p>
+            <audio
+              ref={remoteAudioRef}
+              autoPlay
+              playsInline
+              className="hidden"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* --- INDUSTRIAL CONTROL KEYBOARD TRIMS --- */}
+      <div className="w-full flex justify-center p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent relative z-30 shrink-0">
+        <div className="px-6 py-3.5 rounded-2xl bg-[#141417]/80 border border-white/[0.04] backdrop-blur-xl shadow-xl flex items-center justify-center gap-4 sm:gap-6 min-w-[260px]">
+          <AnimatePresence mode="wait">
+            {callIncoming && (
+              <motion.div
+                key="incoming-actions"
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="flex items-center gap-4"
+              >
+                <button
+                  onClick={acceptCall}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                >
+                  <Phone className="w-5 h-5 fill-white" />
+                </button>
+                <button
+                  onClick={rejectCall}
+                  className="bg-rose-600 hover:bg-rose-500 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                >
+                  <PhoneOff className="w-5 h-5" />
+                </button>
+              </motion.div>
+            )}
+
+            {callActive && (
+              <motion.div
+                key="active-actions"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex items-center gap-4"
+              >
+                <button
+                  onClick={toggleMute}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
+                    isMuted
+                      ? "bg-rose-500/20 border-rose-500/30 text-rose-400 hover:bg-rose-500/30"
+                      : "bg-white/[0.03] border-white/[0.05] text-neutral-300 hover:bg-white/[0.08] hover:text-white"
+                  }`}
+                >
+                  {isMuted ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </button>
+                {/* SAFE HANGUP TRIGGER LINKED TO THE POPUP */}
+                <button
+                  onClick={handleInitiateHangup}
+                  className="bg-rose-600 hover:bg-rose-500 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+                >
+                  <PhoneOff className="w-5 h-5" />
+                </button>
+              </motion.div>
+            )}
+
+            {!callActive && !callIncoming && isOutgoing && (
+              <motion.div
+                key="telemetry-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-3 py-1.5 px-2 text-xs font-semibold font-mono tracking-wider uppercase text-neutral-400"
+              >
+                <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin shrink-0" />
+                <span>{isCalling ? "Calling Node..." : "Connecting..."}</span>
+                <button
+                  onClick={handleInitiateHangup} // Also safeguard outbound cancellation clicks
+                  className="bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-400 ml-4 px-3 py-1 rounded-lg text-[10px] transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* --- PREMIUM CALL TERMINATION CONFIRMATION DIALOGUE OVERLAY --- */}
+      <AnimatePresence>
+        {showHangupConfirm && (
+          <motion.div
+            className="absolute inset-0 z-[200000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowHangupConfirm(false)}
+          >
+            <motion.div
+              variants={confirmDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-2xl p-5 bg-[#131316] border border-white/[0.04] shadow-2xl flex flex-col relative"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <h4 className="text-[14px] font-semibold tracking-tight text-white">
+                  Disconnect Active Pipeline?
+                </h4>
+              </div>
+
+              <p className="text-[12px] leading-relaxed text-neutral-400 font-medium">
+                You are about to terminate the current media layout
+                synchronization channel. This operation cannot be undone.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 mt-5 font-sans">
+                <button
+                  onClick={() => setShowHangupConfirm(false)}
+                  className="h-8 px-3.5 rounded-xl text-[11px] font-semibold text-neutral-400 hover:text-white bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all cursor-pointer"
+                >
+                  Keep Session
+                </button>
+
+                <button
+                  onClick={executeEndCall}
+                  className="h-8 px-3.5 rounded-xl text-[11px] font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm hover:shadow-rose-600/10 transition-all cursor-pointer"
+                >
+                  <PhoneOff className="w-3 h-3" /> Terminate Call
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

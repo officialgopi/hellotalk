@@ -10,6 +10,7 @@ import { setIsNotification } from "@/redux/reducers/misc";
 import { UserCheck, UserX, Bell } from "lucide-react";
 import { transformImage } from "@/utils/features";
 import Modal from "../ui/Modal"; // ✅ use your reusable modal
+import { createPortal } from "react-dom";
 
 const Notifications = () => {
   const { isNotification } = useSelector((state: any) => state.misc);
@@ -36,7 +37,7 @@ const Notifications = () => {
 
   useErrors([{ error, isError }] as any);
 
-  return (
+  return createPortal(
     <Modal isOpen={isNotification} onClose={closeHandler}>
       <div className="text-neutral-900 dark:text-neutral-100">
         {/* Header */}
@@ -66,7 +67,8 @@ const Notifications = () => {
           <p className="text-center text-neutral-400">0 notifications</p>
         )}
       </div>
-    </Modal>
+    </Modal>,
+    document.body,
   );
 };
 
@@ -116,7 +118,7 @@ const NotificationItem = memo(
         </div>
       </motion.div>
     );
-  }
+  },
 );
 
 export default Notifications;

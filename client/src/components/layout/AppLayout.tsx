@@ -20,7 +20,7 @@ import Title from "@/components/shared/Title";
 import ChatList from "@/components/specific/ChatList";
 import Profile from "@/components/specific/Profile";
 import Header from "../shared/Header";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const { NEW_MESSAGE_ALERT, NEW_REQUEST, ONLINE_USERS, REFETCH_CHATS } = events;
 
@@ -86,8 +86,8 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
   useSocketEvents(socket, eventHandlers);
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-[#fafafa] dark:bg-[#050508] text-neutral-900 dark:text-[#f5f5f7] font-sans antialiased relative transition-colors duration-500">
-      {/* 1. LIQUID GLASS BACKGROUND ENVIRONMENT (Organic Mineral Lighting Engine) */}
+    <div className="h-screen w-full overflow-hidden bg-[#fafafa] dark:bg-[#050508] text-neutral-900 dark:text-[#f5f5f7] font-sans antialiased  flex flex-col transition-colors duration-500">
+      {/* 1. LIQUID GLASS BACKGROUND ENVIRONMENT */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] max-w-[600px] bg-[#bfa17a]/[0.06] dark:bg-[#bfa17a]/[0.015] rounded-full blur-[140px]"
@@ -109,7 +109,7 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
       <Title />
 
       {/* Premium Frameless Top Header Bar */}
-      <div className="relative z-40 bg-white/60 dark:bg-[#050508]/40 backdrop-blur-xl border-b border-neutral-200/50 dark:border-white/[0.04]">
+      <div className="relative z-40 bg-white/60 dark:bg-[#050508]/40 backdrop-blur-xl border-b border-neutral-200/50 dark:border-white/[0.04] flex-shrink-0">
         <Header />
       </div>
 
@@ -126,14 +126,14 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
             onClick={handleMobileClose}
           >
             <motion.div
-              className="w-[300px] max-w-[85vw] bg-white/90 dark:bg-[#0e0e12]/80 backdrop-blur-2xl border-r border-neutral-200/60 dark:border-white/[0.05] h-full shadow-[25px_0_60px_rgba(0,0,0,0.04)] dark:shadow-[40px_0_80px_rgba(0,0,0,0.5)] flex flex-col p-4 pt-16 relative"
+              className="w-[300px] max-w-[85vw] bg-white/90 dark:bg-[#0e0e12]/80 backdrop-blur-2xl border-r border-neutral-200/60 dark:border-white/[0.05] h-full shadow-[25px_0_60px_rgba(0,0,0,0.04)] dark:shadow-[40px_0_80px_rgba(0,0,0,0.5)] flex flex-col p-4 pt-16 relative min-w-0"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 400, damping: 38 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex-grow overflow-y-auto rounded-xl">
+              <div className="flex-grow overflow-y-auto rounded-xl min-w-0">
                 <ChatList
                   chats={data?.data}
                   chatId={chatId}
@@ -148,18 +148,18 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
       </AnimatePresence>
 
       {/* --- CENTRAL SEAMLESS GRID WORKSPACE CANVAS --- */}
-      <div className="grid grid-cols-12 h-[calc(100vh-4rem)] relative z-10 p-3 gap-3">
+      <div className="grid grid-cols-12 flex-grow min-h-0 relative z-10 p-3 gap-3 w-full min-w-0">
         {/* Left Interactive Control Panel (Inbox Router) */}
-        <aside className="hidden sm:block sm:col-span-4 md:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl overflow-y-auto transition-all duration-300 shadow-sm">
+        <aside className="hidden sm:block sm:col-span-4 md:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl overflow-y-auto transition-all duration-300 shadow-xs min-w-0">
           {isLoading ? (
-            <div className="w-full h-full p-5 space-y-4">
+            <div className="w-full h-full p-5 space-y-4 min-w-0">
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="flex items-center space-x-3 w-full animate-pulse opacity-70"
+                  className="flex items-center space-x-3 w-full animate-pulse opacity-70 flex-shrink-0"
                 >
-                  <div className="w-11 h-11 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-                  <div className="flex-grow space-y-2.5">
+                  <div className="w-11 h-11 rounded-full bg-neutral-200 dark:bg-neutral-800 flex-shrink-0" />
+                  <div className="flex-grow space-y-2.5 min-w-0">
                     <div className="h-3.5 w-2/3 bg-neutral-200 dark:bg-neutral-800 rounded-md" />
                     <div className="h-2.5 w-1/2 bg-neutral-200 dark:bg-neutral-800 rounded-md" />
                   </div>
@@ -178,7 +178,7 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
         </aside>
 
         {/* Central Viewport Arena (Active Dialogue Layer with AnimatePresence orchestration) */}
-        <main className="col-span-12 sm:col-span-8 md:col-span-5 lg:col-span-6 h-full overflow-hidden bg-white/80 dark:bg-[#0e0e12]/60 backdrop-blur-xl border border-neutral-200/60 dark:border-white/[0.04] rounded-2xl transition-all duration-300 shadow-sm relative group">
+        <main className="col-span-12 sm:col-span-8 md:col-span-5 lg:col-span-6 h-full overflow-hidden bg-white/80 dark:bg-[#0e0e12]/60 backdrop-blur-xl border border-neutral-200/60 dark:border-white/[0.04] rounded-2xl transition-all duration-300 shadow-xs relative group min-w-0">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.015] to-transparent pointer-events-none z-20 rounded-2xl" />
 
           <AnimatePresence mode="wait">
@@ -189,7 +189,7 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
                 animate={{ opacity: 1, filter: "blur(0px)" }}
                 exit={{ opacity: 0, filter: "blur(4px)" }}
                 transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="w-full h-full"
+                className="w-full h-full min-w-0 overflow-hidden"
               >
                 <WrappedComponent
                   {...props}
@@ -202,7 +202,7 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="w-full h-full flex flex-col items-center justify-center text-center p-8 select-none"
+                className="w-full h-full flex flex-col items-center justify-center text-center p-8 select-none min-w-0"
               >
                 <p className="text-[13px] tracking-wide font-medium text-neutral-400 dark:text-neutral-500 max-w-[240px] leading-relaxed">
                   Select a conversation block or channel matrix to launch
@@ -214,12 +214,12 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
         </main>
 
         {/* Right Feature Panel Inspector (User Context Deck) */}
-        <aside className="hidden md:block md:col-span-4 lg:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl p-6 overflow-y-auto transition-all duration-300 shadow-sm">
+        <aside className="hidden md:block md:col-span-4 lg:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl p-6 overflow-y-auto transition-all duration-300 shadow-xs min-w-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="h-full"
+            className="h-full min-w-0"
           >
             <Profile user={user} />
           </motion.div>

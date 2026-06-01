@@ -18,7 +18,7 @@ const useErrors = (errors = []) => {
           if (fallback) fallback();
           else toast.error(error?.data?.message || "Something went wrong");
         }
-      }
+      },
     );
   }, [errors]);
 };
@@ -53,12 +53,12 @@ const useAsyncMutation = (mutatationHook: any) => {
     }
   };
 
-  return [executeMutation, isLoading, data];
+  return [executeMutation, isLoading, data] as const;
 };
 
 const useSocketEvents = (
   socket: Socket,
-  handlers: Record<string, (...args: any) => any>
+  handlers: Record<string, (...args: any) => any>,
 ) => {
   useEffect(() => {
     Object.entries(handlers).forEach(([event, handler]) => {

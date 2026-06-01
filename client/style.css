@@ -7,3 +7,64 @@
 @theme inline {
   --font-poppins: "Poppins", sans-serif;
 }
+
+/* ==========================================================================
+   PREMIUM EDITORIAL SCROLLBAR ARCHITECTURE
+   ========================================================================== */
+
+/* 1. Universal Cross-Browser Standards Track */
+* {
+  /* Firefox Integration */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.dark * {
+  /* Firefox Dark Mode Sync */
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+/* 2. Webkit Engine Calibrations (Chrome, Safari, Edge, Brave) */
+::-webkit-scrollbar {
+  width: 5px; /* Subtle vertical column gauge */
+  height: 5px; /* Subtle horizontal layout track gauge */
+}
+
+/* The structural gutter track behind the thumb */
+::-webkit-scrollbar-track {
+  background: transparent; /* Invisible integration by default */
+}
+
+/* The actual interactive draggable anchor handle tile */
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 100px; /* Perfectly round continuous sub-pixel cap */
+  transition: background 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Mode handling configuration */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 3. Micro-Interaction Hover Transitions */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25); /* Elegant visual response on interaction */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* 4. Core Defensive Layout Trimming Utility Classes */
+.scrollbar-none {
+  scrollbar-width: none !important; /* Firefox hide */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important; /* Webkit engine hide */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}

@@ -8,6 +8,7 @@ import { setIsNewGroup } from "@/redux/reducers/misc";
 import { toast } from "sonner";
 import UserItem from "@/components/shared/UserItem";
 import Modal from "@/components/ui/Modal"; // 🔥 reused modal
+import { createPortal } from "react-dom";
 
 const NewGroup = () => {
   const { isNewGroup } = useSelector((state: any) => state.misc);
@@ -27,7 +28,7 @@ const NewGroup = () => {
 
   const selectMemberHandler = (id: string) => {
     setSelectedMembers((prev) =>
-      prev.includes(id) ? prev.filter((curr) => curr !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((curr) => curr !== id) : [...prev, id],
     );
   };
 
@@ -49,7 +50,7 @@ const NewGroup = () => {
     dispatch(setIsNewGroup(false));
   };
 
-  return (
+  return createPortal(
     <Modal isOpen={isNewGroup} onClose={closeHandler}>
       {/* Title */}
       <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 text-center">
@@ -112,7 +113,8 @@ const NewGroup = () => {
           Create
         </motion.button>
       </div>
-    </Modal>
+    </Modal>,
+    document.body,
   );
 };
 
