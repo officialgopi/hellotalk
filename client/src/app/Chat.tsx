@@ -223,7 +223,7 @@ const Chat = ({
   }, [socket]);
 
   const allMessages = [...oldMessages, ...messages];
-
+  const attachmentBtnRef = useRef<HTMLButtonElement>(null);
   return chatDetails.isLoading ? (
     <div className="h-full w-full flex items-center justify-center bg-[#fdfdfd] dark:bg-[#0a0a0c]">
       <div className="flex flex-col items-center gap-3">
@@ -382,14 +382,17 @@ const Chat = ({
                 className="relative flex items-center justify-center"
                 onClick={handleToggleFileOpen}
               >
-                <FileMenu chatId={chatId} />
-                <Paperclip
+                <FileMenu triggerRef={attachmentBtnRef} chatId={chatId} />
+                <button
+                  ref={attachmentBtnRef}
                   className="w-4 h-4 transition-transform hover:rotate-12"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleToggleFileOpen();
                   }}
-                />
+                >
+                  <Paperclip className="w-full h-full" />
+                </button>
               </div>
             </div>
 
