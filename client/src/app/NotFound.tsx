@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CircleSlash } from "lucide-react";
 
 const NotFound = () => {
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(5);
 
-  // Redirect after 3 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => (prev > 1 ? prev - 1 : 0));
     }, 1000);
 
-    const redirect = setTimeout(() => navigate("/"), 3000);
+    const redirect = setTimeout(() => navigate("/"), 5000);
 
     return () => {
       clearInterval(timer);
@@ -22,65 +20,94 @@ const NotFound = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950 flex items-center justify-center px-4">
-      <div className="flex flex-col items-center space-y-8 text-center">
-        {/* Animated Icon */}
-        <motion.div
-          initial={{ scale: 0, rotate: -90, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 120, damping: 12 }}
-        >
-          <CircleSlash className="w-40 h-40 text-neutral-700 dark:text-neutral-400 drop-shadow-lg" />
-        </motion.div>
+    <div className="min-h-screen bg-[#ffffff] dark:bg-[#000000] text-[#262626] dark:text-[#f5f5f5] flex flex-col justify-between antialiased font-sans transition-colors duration-200">
+      {/* --- INSTAGRAM SYSTEM BRAND HEADER --- */}
+      <header className="w-full h-[60px] border-b border-[#dbdbdb] dark:border-[#262626] bg-[#ffffff] dark:bg-[#000000] sticky top-0 z-50 transition-colors duration-200">
+        <div className="max-w-[935px] h-full mx-auto flex justify-between items-center px-4 md:px-10">
+          <Link
+            to="/"
+            className="text-xl font-semibold tracking-tight font-sans text-[#262626] dark:text-[#f5f5f5]"
+          >
+            Hellotalk
+          </Link>
+          <span className="text-xs font-normal text-[#737373] dark:text-[#a8a8a8]">
+            Error Log: 404
+          </span>
+        </div>
+      </header>
 
-        {/* 404 Title */}
+      {/* --- INSTAGRAM CONTENT CANVAS AREA --- */}
+      <main className="flex-grow flex flex-col items-center justify-center text-center px-6 py-12 max-w-[400px] mx-auto">
+        {/* Typographic Large Indicator */}
         <motion.h1
-          className="text-7xl md:text-8xl font-extrabold bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-400 dark:from-neutral-200 dark:via-neutral-400 dark:to-neutral-600 bg-clip-text text-transparent drop-shadow-md"
-          initial={{ y: -40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
+          className="text-8xl font-light tracking-tighter text-[#000000] dark:text-[#ffffff] mb-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
         >
           404
         </motion.h1>
 
-        {/* Subtitle */}
-        <motion.h2
-          className="text-2xl md:text-3xl font-medium text-neutral-700 dark:text-neutral-300"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
+        {/* Narrative Copy */}
+        <motion.div
+          className="space-y-2.5"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
         >
-          Page Not Found
-        </motion.h2>
+          <h2 className="text-[22px] font-semibold tracking-tight leading-7 text-[#262626] dark:text-[#f5f5f5]">
+            Sorry, this page isn't available.
+          </h2>
+          <p className="text-sm font-normal text-[#737373] dark:text-[#a8a8a8] leading-[18px]">
+            The link you followed may be broken, or the page may have been
+            removed. Go back to Hellotalk.
+          </p>
+        </motion.div>
 
-        {/* Countdown */}
-        <motion.p
-          className="text-lg text-neutral-600 dark:text-neutral-400"
+        {/* Action Call Button Component */}
+        <motion.div
+          className="mt-8 w-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
+          transition={{ delay: 0.2 }}
         >
-          Redirecting to <span className="font-semibold">Home</span> in{" "}
-          <span className="text-neutral-900 dark:text-neutral-100 font-bold">
-            {countdown}
-          </span>{" "}
-          seconds...
-        </motion.p>
-
-        {/* Go Home Link (manual option) */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
-        >
+          {/* Instagram's Native Premium Fill Action Blue Button */}
           <Link
             to="/"
-            className="px-6 py-3 rounded-xl bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900 font-medium shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            className="inline-flex items-center justify-center w-full sm:w-auto px-6 h-8 text-sm font-semibold rounded-lg text-white bg-[#0095f6] hover:bg-[#1877f2] dark:bg-[#0095f6] dark:hover:bg-[#1877f2] transition-colors duration-150 select-none text-center"
           >
-            Go back now
+            Return to Feed ({countdown}s)
           </Link>
         </motion.div>
-      </div>
+      </main>
+
+      {/* --- FLAT APP FOOTER REGION --- */}
+      <footer className="w-full max-w-[935px] mx-auto flex flex-col gap-4 items-center text-[12px] text-[#737373] dark:text-[#737373] pb-12 pt-6 px-4 md:px-10">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center font-normal text-[#737373] dark:text-[#a8a8a8]">
+          <span className="hover:underline cursor-pointer transition-all">
+            About
+          </span>
+          <span className="hover:underline cursor-pointer transition-all">
+            Blog
+          </span>
+          <span className="hover:underline cursor-pointer transition-all">
+            API
+          </span>
+          <span className="hover:underline cursor-pointer transition-all">
+            Privacy
+          </span>
+          <span className="hover:underline cursor-pointer transition-all">
+            Terms
+          </span>
+          <span className="hover:underline cursor-pointer transition-all">
+            Locations
+          </span>
+        </div>
+
+        <div className="tracking-tight text-[12px] text-[#737373] uppercase font-mono scale-95 opacity-80 mt-2">
+          © 2026 HELLOTALK FROM META
+        </div>
+      </footer>
     </div>
   );
 };

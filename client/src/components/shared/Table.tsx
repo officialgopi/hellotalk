@@ -1,41 +1,52 @@
 import { motion } from "framer-motion";
 
-const Table = ({
-  rows,
-  columns,
-  heading,
-  rowHeight = 52,
-}: {
+interface TableProps {
   rows: any[];
   columns: any[];
   heading: string;
   rowHeight?: number;
-}) => {
-  return (
-    <div className="w-full h-screen flex flex-col items-center justify-center px-6">
-      {/* Card Container */}
-      <div className="w-full h-full max-w-6xl bg-neutral-100 dark:bg-neutral-900 rounded-2xl shadow-lg p-6 overflow-hidden flex flex-col">
-        {/* Heading */}
-        <motion.h2
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="text-center text-2xl font-semibold uppercase tracking-wide text-neutral-800 dark:text-neutral-100 mb-6"
-        >
-          {heading}
-        </motion.h2>
+}
 
-        {/* Table Wrapper */}
-        <div className="flex-1 overflow-auto rounded-lg border border-neutral-300 dark:border-neutral-700">
-          <table className="w-full text-sm text-left text-neutral-700 dark:text-neutral-300">
-            {/* Table Head */}
-            <thead className="bg-neutral-800 text-neutral-100">
+const Table = ({ rows, columns, heading, rowHeight = 52 }: TableProps) => {
+  return (
+    <div className="w-full h-full min-h-0 flex flex-col p-4 md:p-6 select-none font-sans min-w-0">
+      {/* --- PREMIUM DATA WORKSPACE WORK TRACK --- */}
+      <div className="w-full h-full flex flex-col bg-white dark:bg-[#0e0e12]/60 backdrop-blur-xl border border-neutral-200/60 dark:border-white/[0.04] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.01)] overflow-hidden min-w-0">
+        {/* Header Title Section Frame */}
+        <div className="px-6 py-5 flex items-center justify-between border-b border-neutral-100 dark:border-white/[0.03] flex-shrink-0 min-w-0">
+          <div className="space-y-1 min-w-0">
+            <motion.h2
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-[#ececec] block truncate"
+            >
+              {heading}
+            </motion.h2>
+            <p className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 block truncate">
+              Review systemic network database metrics and data records logs.
+            </p>
+          </div>
+
+          {/* Dynamic Records Registry Counter Tag */}
+          <div className="flex-shrink-0 ml-4">
+            <span className="text-[10px] font-bold font-mono tracking-tight px-2 py-1 rounded-md bg-neutral-50 dark:bg-white/[0.02] border border-neutral-200/60 dark:border-white/[0.04] text-neutral-500 dark:text-neutral-400">
+              REGISTRY: {rows.length} NODES
+            </span>
+          </div>
+        </div>
+
+        {/* --- DEFENSIVE DATA RAILS VIEWPORT --- */}
+        <div className="flex-grow overflow-auto min-w-0 w-full scrollbar-thin">
+          <table className="w-full text-left border-collapse min-w-0 table-fixed">
+            {/* Elegant Low-Contrast Table Head */}
+            <thead className="bg-neutral-50/70 dark:bg-[#131316]/40 border-b border-neutral-100 dark:border-white/[0.03] sticky top-0 z-20 backdrop-blur-md">
               <tr>
                 {columns.map((col) => (
                   <th
                     key={col.field}
                     style={{ width: col.width }}
-                    className="px-4 py-3 font-medium text-sm uppercase tracking-wide"
+                    className="px-6 py-3.5 text-[11px] font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase select-none truncate"
                   >
                     {col.headerName}
                   </th>
@@ -43,23 +54,34 @@ const Table = ({
               </tr>
             </thead>
 
-            {/* Table Body */}
-            <tbody>
+            {/* Seamless Content Rows Base Deck */}
+            <tbody className="divide-y divide-neutral-100 dark:divide-white/[0.02]">
               {rows.length > 0 ? (
                 rows.map((row, idx) => (
                   <motion.tr
                     key={row.id || idx}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    className="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+                    transition={{
+                      duration: 0.35,
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: Math.min(idx * 0.02, 0.15),
+                    }}
+                    className="group/row hover:bg-neutral-50/50 dark:hover:bg-white/[0.01] transition-colors"
                     style={{ height: rowHeight }}
                   >
                     {columns.map((col) => (
-                      <td key={col.field} className="px-4 py-2">
+                      <td
+                        key={col.field}
+                        className="px-6 text-[13px] font-medium text-neutral-600 dark:text-neutral-400 truncate"
+                      >
                         {col.renderCell
                           ? col.renderCell({ row })
-                          : row[col.field]}
+                          : (row[col.field] ?? (
+                              <span className="text-neutral-300 dark:text-neutral-700 font-mono">
+                                —
+                              </span>
+                            ))}
                       </td>
                     ))}
                   </motion.tr>
@@ -68,9 +90,13 @@ const Table = ({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="text-center py-6 text-neutral-500 dark:text-neutral-400"
+                    className="text-center py-16 text-neutral-400 dark:text-neutral-500 text-xs font-medium"
                   >
-                    No data available
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <span className="tracking-wide">
+                        No active catalog nodes populated
+                      </span>
+                    </div>
                   </td>
                 </tr>
               )}

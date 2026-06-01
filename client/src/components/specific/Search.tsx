@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Users } from "lucide-react";
 import { useInputValidation } from "6pp";
 import { useAsyncMutation } from "@/hooks/hook";
 import {
@@ -29,7 +29,7 @@ const Search: React.FC = () => {
   const [searchUser] = useLazySearchUserQuery();
 
   const [sendFriendRequest, isLoadingSendFriendRequest]: any = useAsyncMutation(
-    useSendFriendRequestMutation
+    useSendFriendRequestMutation,
   );
 
   const dispatch = useDispatch();
@@ -42,49 +42,78 @@ const Search: React.FC = () => {
 
   const searchCloseHandler = () => dispatch(setIsSearch(false));
 
+  // Protected Debounce Loop Core
   useEffect(() => {
+    const trimmedValue = search.value.trim();
+
+    if (!trimmedValue) {
+      setUsers([]);
+      return;
+    }
+
     const timeOutId = setTimeout(() => {
-      if (search.value.trim() !== "") {
-        searchUser(search.value)
-          .then(({ data }: any) => {
-            console.log(data.data);
-            setUsers(data.data);
-          })
-          .catch((e: unknown) => console.error(e));
-      } else {
-        setUsers([]);
-      }
-    }, 1000);
+      searchUser(trimmedValue)
+        .then(({ data }: any) => {
+          setUsers(data?.data || []);
+        })
+        .catch((e: unknown) => {
+          console.error("Directory pipeline execution error:", e);
+          setUsers([]);
+        });
+    }, 400);
 
     return () => clearTimeout(timeOutId);
+    // Explicitly uncoupling mutable action refs to safeguard active typing operations
   }, [search.value]);
 
   return (
     <Modal isOpen={isSearch} onClose={searchCloseHandler}>
-      <div className="flex flex-col w-full space-y-4">
-        <h2 className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Find People
-        </h2>
-        <div className="flex flex-1 items-center rounded-lg border border-neutral-400 dark:border-neutral-700 px-3 py-2 bg-neutral-100 dark:bg-neutral-900">
-          <SearchIcon className="w-5 h-5 text-neutral-500 mr-2" />
+      <div className="flex flex-col w-full min-w-0 select-none font-sans">
+        {/* --- BRAND HEADER PROFILE TITLE --- */}
+        <div className="flex items-center gap-2.5 pb-4 mb-4 border-b border-neutral-100 dark:border-white/[0.03]">
+          <div className="w-7 h-7 rounded-lg bg-neutral-50 dark:bg-white/[0.01] border border-neutral-200/40 dark:border-white/[0.02] flex items-center justify-center text-neutral-400 dark:text-neutral-500 shrink-0">
+            <Users className="w-4 h-4 stroke-[1.8]" />
+          </div>
+          <div className="min-w-0 flex-grow">
+            <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-[#ececec] block truncate">
+              Global Directory Explorer
+            </h2>
+          </div>
+        </div>
+
+        {/* --- INPUT SELECTION BAR --- */}
+        <div className="flex items-center w-full rounded-xl border border-neutral-200/80 dark:border-[#222226] focus-within:border-neutral-900 dark:focus-within:border-neutral-400 px-3.5 py-2.5 bg-neutral-50/50 dark:bg-[#121215]/50 transition-all duration-300 shadow-xs relative min-w-0 mb-4">
+          <SearchIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-500 mr-2.5 shrink-0 stroke-[1.8]" />
           <input
             type="text"
             value={search.value}
             onChange={search.changeHandler}
-            placeholder="Search..."
-            className="flex-1 bg-transparent focus:outline-none text-neutral-900 dark:text-neutral-100"
+            placeholder="Search accounts by name or profile signatures..."
+            className="flex-1 bg-transparent border-none outline-none focus:outline-none text-[13px] leading-relaxed text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 min-w-0 w-full"
           />
         </div>
 
-        <div className="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-800 max-h-64 overflow-y-auto">
-          {users.map((i) => (
-            <UserItem
-              user={i}
-              key={i._id}
-              handler={addFriendHandler}
-              handlerIsLoading={isLoadingSendFriendRequest}
-            />
-          ))}
+        {/* --- SCROLL DIRECTORY BASE LAYER --- */}
+        <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto scrollbar-none pr-0.5 min-w-0 w-full">
+          {users.length > 0 ? (
+            users.map((item) => (
+              <UserItem
+                user={item}
+                key={item._id}
+                handler={addFriendHandler}
+                handlerIsLoading={isLoadingSendFriendRequest}
+              />
+            ))
+          ) : search.value.trim() !== "" ? (
+            <div className="py-12 text-center text-[12px] font-medium text-neutral-400 dark:text-neutral-500 select-none block truncate">
+              No matching profiles authenticated on the active pipeline matrix.
+            </div>
+          ) : (
+            <div className="py-12 text-center text-[12px] font-medium text-neutral-400/80 dark:text-neutral-500/80 select-none block truncate">
+              Initialize keystrokes above to scan the directory tree
+              infrastructure.
+            </div>
+          )}
         </div>
       </div>
     </Modal>

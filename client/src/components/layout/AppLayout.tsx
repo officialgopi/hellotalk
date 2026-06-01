@@ -20,7 +20,7 @@ import Title from "@/components/shared/Title";
 import ChatList from "@/components/specific/ChatList";
 import Profile from "@/components/specific/Profile";
 import Header from "../shared/Header";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 const { NEW_MESSAGE_ALERT, NEW_REQUEST, ONLINE_USERS, REFETCH_CHATS } = events;
 
@@ -60,7 +60,7 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
       if (data.chatId === chatId) return;
       dispatch(setNewMessagesAlert(data));
     },
-    [chatId, dispatch]
+    [chatId, dispatch],
   );
 
   const newRequestListener = useCallback(() => {
@@ -86,46 +86,86 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
   useSocketEvents(socket, eventHandlers);
 
   return (
-    <div className="h-screen w-full overflow-hidden">
+    <div className="h-screen w-full overflow-hidden bg-[#fafafa] dark:bg-[#050508] text-neutral-900 dark:text-[#f5f5f7] font-sans antialiased relative transition-colors duration-500">
+      {/* 1. LIQUID GLASS BACKGROUND ENVIRONMENT (Organic Mineral Lighting Engine) */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <motion.div
+          className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] max-w-[600px] bg-[#bfa17a]/[0.06] dark:bg-[#bfa17a]/[0.015] rounded-full blur-[140px]"
+          animate={{ scale: [1, 1.05, 1], y: [0, 15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-[-10%] left-[-5%] w-[60vw] h-[60vw] max-w-[700px] bg-neutral-400/[0.04] dark:bg-[#f5f5f7]/[0.008] rounded-full blur-[160px]"
+          animate={{ scale: [1, 1.08, 1], x: [0, -20, 0] }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+        />
+      </div>
+
       <Title />
-      <Header />
+
+      {/* Premium Frameless Top Header Bar */}
+      <div className="relative z-40 bg-white/60 dark:bg-[#050508]/40 backdrop-blur-xl border-b border-neutral-200/50 dark:border-white/[0.04]">
+        <Header />
+      </div>
 
       <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
 
-      {/* Mobile Drawer */}
-      {isMobile && (
-        <motion.div
-          className="fixed inset-0 z-50 bg-black/50 flex"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleMobileClose}
-        >
+      {/* Modern High-End Mobile Panel Overlay Drawer */}
+      <AnimatePresence>
+        {isMobile && (
           <motion.div
-            className="w-[70vw] bg-neutral-900 h-full"
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 bg-neutral-950/20 dark:bg-black/50 backdrop-blur-md flex"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleMobileClose}
           >
-            <ChatList
-              chats={data?.data}
-              chatId={chatId}
-              handleDeleteChat={handleDeleteChat}
-              newMessagesAlert={newMessagesAlert}
-              onlineUsers={onlineUsers}
-            />
+            <motion.div
+              className="w-[300px] max-w-[85vw] bg-white/90 dark:bg-[#0e0e12]/80 backdrop-blur-2xl border-r border-neutral-200/60 dark:border-white/[0.05] h-full shadow-[25px_0_60px_rgba(0,0,0,0.04)] dark:shadow-[40px_0_80px_rgba(0,0,0,0.5)] flex flex-col p-4 pt-16 relative"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 400, damping: 38 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-grow overflow-y-auto rounded-xl">
+                <ChatList
+                  chats={data?.data}
+                  chatId={chatId}
+                  handleDeleteChat={handleDeleteChat}
+                  newMessagesAlert={newMessagesAlert}
+                  onlineUsers={onlineUsers}
+                />
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* Main Layout */}
-      <div className="grid grid-cols-12 h-[calc(100vh-4rem)]">
-        {/* Left Sidebar */}
-        <div className="hidden sm:block sm:col-span-4 md:col-span-3 h-full border-r border-neutral-500/50">
+      {/* --- CENTRAL SEAMLESS GRID WORKSPACE CANVAS --- */}
+      <div className="grid grid-cols-12 h-[calc(100vh-4rem)] relative z-10 p-3 gap-3">
+        {/* Left Interactive Control Panel (Inbox Router) */}
+        <aside className="hidden sm:block sm:col-span-4 md:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl overflow-y-auto transition-all duration-300 shadow-sm">
           {isLoading ? (
-            <div className="animate-pulse w-full h-full bg-neutral-300 dark:bg-neutral-800" />
+            <div className="w-full h-full p-5 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center space-x-3 w-full animate-pulse opacity-70"
+                >
+                  <div className="w-11 h-11 rounded-full bg-neutral-200 dark:bg-neutral-800" />
+                  <div className="flex-grow space-y-2.5">
+                    <div className="h-3.5 w-2/3 bg-neutral-200 dark:bg-neutral-800 rounded-md" />
+                    <div className="h-2.5 w-1/2 bg-neutral-200 dark:bg-neutral-800 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <ChatList
               chats={data?.data}
@@ -135,24 +175,55 @@ const AppLayout = () => (WrappedComponent?: React.FC<any>) => (props: any) => {
               onlineUsers={onlineUsers}
             />
           )}
-        </div>
+        </aside>
 
-        {/* Chat Content */}
-        <div className="col-span-12 sm:col-span-8 md:col-span-5 lg:col-span-6 h-full overflow-hidden">
-          {WrappedComponent && (
-            <WrappedComponent
-              {...props}
-              chatId={chatId}
-              user={user}
-              chat={data?.data?.find((chat: any) => chat._id === chatId)}
-            />
-          )}
-        </div>
+        {/* Central Viewport Arena (Active Dialogue Layer with AnimatePresence orchestration) */}
+        <main className="col-span-12 sm:col-span-8 md:col-span-5 lg:col-span-6 h-full overflow-hidden bg-white/80 dark:bg-[#0e0e12]/60 backdrop-blur-xl border border-neutral-200/60 dark:border-white/[0.04] rounded-2xl transition-all duration-300 shadow-sm relative group">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.015] to-transparent pointer-events-none z-20 rounded-2xl" />
 
-        {/* Right Sidebar */}
-        <div className="hidden md:block md:col-span-4 lg:col-span-3 h-full bg-neutral-100 dark:bg-neutral-950 p-6 border-l border-neutral-500/50">
-          <Profile user={user} />
-        </div>
+          <AnimatePresence mode="wait">
+            {WrappedComponent ? (
+              <motion.div
+                key={chatId || "empty-chat"}
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, filter: "blur(4px)" }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="w-full h-full"
+              >
+                <WrappedComponent
+                  {...props}
+                  chatId={chatId}
+                  user={user}
+                  chat={data?.data?.find((chat: any) => chat._id === chatId)}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full h-full flex flex-col items-center justify-center text-center p-8 select-none"
+              >
+                <p className="text-[13px] tracking-wide font-medium text-neutral-400 dark:text-neutral-500 max-w-[240px] leading-relaxed">
+                  Select a conversation block or channel matrix to launch
+                  interactive video streaming.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* Right Feature Panel Inspector (User Context Deck) */}
+        <aside className="hidden md:block md:col-span-4 lg:col-span-3 h-full bg-white/40 dark:bg-[#0e0e12]/30 backdrop-blur-xl border border-neutral-200/50 dark:border-white/[0.03] rounded-2xl p-6 overflow-y-auto transition-all duration-300 shadow-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="h-full"
+          >
+            <Profile user={user} />
+          </motion.div>
+        </aside>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ import api from "@/utils/axiosInstace.util";
 // Lazy dialogs
 const SearchDialog = lazy(() => import("@/components/specific/Search.tsx"));
 const NotificationDialog = lazy(
-  () => import("@/components/specific/Notifications.tsx")
+  () => import("@/components/specific/Notifications.tsx"),
 );
 const NewGroupDialog = lazy(() => import("@/components/specific/NewGroup"));
 
@@ -28,7 +28,7 @@ const Header = () => {
   const dispatch = useDispatch();
 
   const { isSearch, isNotification, isNewGroup } = useSelector(
-    (state: any) => state.misc
+    (state: any) => state.misc,
   );
   const { notificationCount } = useSelector((state: any) => state.chat);
 
@@ -53,65 +53,70 @@ const Header = () => {
 
   return (
     <>
-      {/* AppBar */}
-      <header className="w-full h-16 border-b border-neutral-500/50 bg-neutral-100 dark:bg-neutral-950 shadow-md flex items-center justify-between px-4 sm:px-8">
-        {/* Mobile Menu */}
+      {/* Premium Liquid Glass Application Bar */}
+      <header className="w-full h-16 border-b border-neutral-200/50 dark:border-white/[0.04] bg-white/70 dark:bg-[#050508]/40 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 sticky top-0 z-40 transition-colors duration-300">
+        {/* Mobile Menu Panel Toggle Key */}
         <button
-          className="sm:hidden text-neutral-200 hover:text-neutral-100"
+          className="sm:hidden text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors flex-shrink-0 cursor-pointer p-1"
           onClick={handleMobile}
         >
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
-        {/* Left - Brand */}
-        <div className="flex items-center h-full gap-2 justify-center">
-          <div className=" h-[40px] w-[40px] p-1">
+
+        {/* Left Segment - Brand Identity Typography */}
+        <div className="flex items-center h-full gap-3 justify-center select-none ml-4 sm:ml-0">
+          <div className="h-7 w-7 relative flex-shrink-0 group cursor-pointer">
+            <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-amber-500/20 to-neutral-400/20 opacity-0 group-hover:opacity-100 blur-xs transition-opacity duration-300" />
             <img
               src="/logo.png"
               alt="Logo"
-              className=" object-cover rounded-full"
+              className="w-full h-full object-contain dark:brightness-110 relative z-10"
             />
           </div>
-          <h1 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 sm:flex hidden">
-            HelloTalk
+          <h1 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-[#f3f3f3] sm:block hidden">
+            Hellotalk
           </h1>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Space Balance Anchor */}
+        <div className="flex-grow" />
 
-        {/* Right - Action Icons */}
-        <div className="flex items-center gap-3 h-full ">
+        {/* Right Segment - Premium Clean Action Elements */}
+        <div className="flex items-center gap-1.5 h-full flex-shrink-0">
           <IconBtn
-            title="Search"
-            icon={<Search size={20} />}
+            title="Search network"
+            icon={<Search size={16} />}
             onClick={openSearch}
           />
           <IconBtn
-            title="New Group"
-            icon={<Plus size={20} />}
+            title="New Conversation Room"
+            icon={<Plus size={16} />}
             onClick={openNewGroup}
           />
           <IconBtn
-            title="Manage Groups"
-            icon={<Users size={20} />}
+            title="Manage Workspace Channels"
+            icon={<Users size={16} />}
             onClick={navigateToGroup}
           />
           <IconBtn
-            title="Notifications"
-            icon={<Bell size={20} />}
+            title="Workspace Notifications"
+            icon={<Bell size={16} />}
             onClick={openNotification}
             value={notificationCount}
           />
           <IconBtn
-            title="Logout"
-            icon={<LogOut size={20} />}
+            title="Terminate Active Session"
+            icon={<LogOut size={16} />}
             onClick={logoutHandler}
           />
-          <ToggleThemeBtn className="flex " />
+
+          <div className="h-4 w-px bg-neutral-200 dark:bg-white/[0.06] mx-1.5" />
+
+          <ToggleThemeBtn className="flex items-center justify-center p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/60 dark:hover:bg-white/[0.02] transition-colors" />
         </div>
       </header>
 
-      {/* Dialogs with AnimatePresence */}
+      {/* Lazy Suspense Modal Intercept Overlay Layers */}
       <AnimatePresence>
         {isSearch && (
           <Suspense fallback={<Backdrop />}>
@@ -133,7 +138,7 @@ const Header = () => {
   );
 };
 
-// Reusable Icon Button with badge + hover animation
+// Reusable Custom Premium Icon Control Key Node
 const IconBtn = ({
   title,
   icon,
@@ -147,15 +152,17 @@ const IconBtn = ({
 }) => {
   return (
     <motion.button
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.04, y: -0.5 }}
+      whileTap={{ scale: 0.96 }}
       title={title}
       onClick={onClick}
-      className="relative p-2 rounded-full  text-neutral-800 hover:bg-neutral-800 hover:text-neutral-100 transition dark:text-neutral-200 w-4 h-hull sm:w-auto sm:h-auto"
+      className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/60 dark:hover:bg-white/[0.02] border border-transparent hover:border-neutral-200/50 dark:hover:border-white/[0.03] transition-all duration-200 cursor-pointer flex-shrink-0"
     >
-      {icon}
+      <div className="flex-shrink-0">{icon}</div>
+
+      {/* Luxury Minimal Warning Dot Flag */}
       {value ? (
-        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+        <span className="absolute top-1.5 right-1.5 min-w-4 h-4 flex items-center justify-center bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-[9px] font-bold px-1 rounded-full border border-white dark:border-[#050508] shadow-sm transform translate-x-0.5 -translate-y-0.5">
           {value}
         </span>
       ) : null}
@@ -163,13 +170,13 @@ const IconBtn = ({
   );
 };
 
-// Backdrop for lazy dialogs
+// Defensively Styled Translucent Backdrop
 const Backdrop = () => (
   <motion.div
     initial={{ opacity: 0 }}
-    animate={{ opacity: 0.5 }}
+    animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    className="fixed inset-0 bg-black z-40"
+    className="fixed inset-0 bg-neutral-950/20 dark:bg-black/40 backdrop-blur-sm z-40"
   />
 );
 
