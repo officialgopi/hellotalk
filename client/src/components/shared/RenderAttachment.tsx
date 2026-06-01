@@ -1,9 +1,5 @@
 import React from "react";
 import { transformImage } from "@/utils/features";
-import { FileIcon, Volume2 } from "lucide-react";
-
-const RenderAttachment = (file: string, url: string) => {
-  switch (file) {
 import { FileIcon, Volume2, Maximize2, FileText } from "lucide-react";
 
 interface RenderAttachmentProps {
