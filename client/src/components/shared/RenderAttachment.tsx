@@ -1,5 +1,5 @@
 import { transformImage } from "@/utils/features";
-import { FileIcon, Film, Play, Volume2 } from "lucide-react";
+import { FileIcon, Volume2 } from "lucide-react";
 
 const RenderAttachment = (file: string, url: string) => {
   switch (file) {

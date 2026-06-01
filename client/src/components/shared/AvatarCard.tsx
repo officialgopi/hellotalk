@@ -8,7 +8,7 @@ interface AvatarCardProps {
 const AvatarCard: React.FC<AvatarCardProps> = ({ avatar = [], max = 3 }) => {
   const visibleAvatars = avatar.slice(0, max);
   const extraCount = avatar.length - max;
-  const isGroup = avatar.length > 1;
+  // const isGroup = avatar.length > 1;
 
   // 1. PREMIUM CREATIVE TREATMENT: Dual Avatar Interlocking Layout (Iconic Messaging Style)
   if (avatar.length === 2) {

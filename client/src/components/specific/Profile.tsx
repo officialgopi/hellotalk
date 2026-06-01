@@ -1,6 +1,6 @@
 import {
-  User as FaceIcon,
-  AtSign as UserNameIcon,
+  // User as FaceIcon,
+  // AtSign as UserNameIcon,
   Calendar as CalendarIcon,
   FileText as BioIcon,
 } from "lucide-react";
